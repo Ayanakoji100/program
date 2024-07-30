@@ -1,0 +1,102 @@
+#include <stdio.h>
+#include <string.h>
+
+#define MAX_DATA_LENGTH 100
+
+void xorDivision(char *dividend, const char *divisor, int length) {
+    for (int i = 0; i < length; i++) {
+        if (dividend[i] == divisor[i]) {
+            dividend[i] = '0';
+        } else {
+            dividend[i] = '1';
+        }
+    }
+}
+
+void computeCRC(char *data, const char *generator, char *crc) {
+    int dataLength = strlen(data);
+    int generatorLength = strlen(generator);
+
+    char dividend[MAX_DATA_LENGTH];
+    strcpy(dividend, data);
+
+    for (int i = 0; i < generatorLength - 1; i++) {
+        strcat(dividend, "0");
+    }
+
+    char temp[MAX_DATA_LENGTH];
+    strncpy(temp, dividend, generatorLength);
+    temp[generatorLength] = '\0';
+
+    for (int i = 0; i < dataLength; i++) {
+        if (temp[0] == '1') {
+            xorDivision(temp, generator, generatorLength);
+        }
+        for (int j = 0; j < generatorLength - 1; j++) {
+            temp[j] = temp[j + 1];
+        }
+        temp[generatorLength - 1] = dividend[generatorLength + i];
+    }
+
+    strncpy(crc, temp, generatorLength - 1);
+    crc[generatorLength - 1] = '\0';
+}
+
+int verifyCRC(char *receivedData, const char *generator) {
+    int dataLength = strlen(receivedData);
+    int generatorLength = strlen(generator);
+
+    char temp[MAX_DATA_LENGTH];
+    strncpy(temp, receivedData, generatorLength);
+    temp[generatorLength] = '\0';
+
+    for (int i = 0; i < dataLength - (generatorLength - 1); i++) {
+        if (temp[0] == '1') {
+            xorDivision(temp, generator, generatorLength);
+        }
+        for (int j = 0; j < generatorLength - 1; j++) {
+            temp[j] = temp[j + 1];
+        }
+        temp[generatorLength - 1] = receivedData[generatorLength + i];
+    }
+
+    for (int i = 0; i < generatorLength - 1; i++) {
+        if (temp[i] != '0') {
+            return 0; // Error detected
+        }
+    }
+    return 1; // No error
+}
+
+int main() {
+    char data[MAX_DATA_LENGTH];
+    char generator[MAX_DATA_LENGTH] = "100000111";
+    char crc[MAX_DATA_LENGTH];
+    char transmittedData[MAX_DATA_LENGTH];
+
+    // Sender side
+    printf("Enter binary data: ");
+    scanf("%s", data);
+    
+
+    computeCRC(data, generator, crc);
+
+    printf("CRC: %s\n", crc);
+
+    strcpy(transmittedData, data);
+    strcat(transmittedData, crc);
+    printf("Transmitted data: %s\n", transmittedData);
+
+    // Receiver side
+    char receivedData[MAX_DATA_LENGTH];
+    printf("Enter received data: ");
+    scanf("%s", receivedData);
+
+    if (verifyCRC(receivedData, generator)) {
+        printf("No error detected in received data.\n");
+    } else {
+        printf("Error detected in received data.\n");
+    }
+
+    return 0;
+}
