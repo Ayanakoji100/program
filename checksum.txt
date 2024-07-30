@@ -1,0 +1,127 @@
+#include <stdio.h>
+
+#define MAX_SIZE 100
+
+void binary_addition(int a[8], int b[8], int result[8]) {
+    int carry = 0;
+    for (int j = 7; j >= 0; j--) {
+        int sum = a[j] + b[j] + carry;
+        result[j] = sum % 2;
+        carry = sum / 2;
+    }
+}
+
+void calculate_checksum(int input[MAX_SIZE][8], int checksum[MAX_SIZE + 1][8], int n) {
+    int temp_checksum[8] = {0};
+
+    for (int i = 0; i < n; i++) {
+        int current_byte[8];
+        for (int j = 0; j < 8; j++) {
+            current_byte[j] = input[i][j];
+        }
+        binary_addition(temp_checksum, current_byte, temp_checksum);
+    }
+
+    for (int j = 0; j < 8; j++) {
+        temp_checksum[j] = !temp_checksum[j];
+    }
+
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < 8; j++) {
+            checksum[i][j] = input[i][j];
+        }
+    }
+
+    for (int j = 0; j < 8; j++) {
+        checksum[n][j] = temp_checksum[j];
+    }
+}
+
+void validate_checksum(int checksum[MAX_SIZE + 1][8], int n) {
+    int validation_result[8] = {0};
+
+    for (int i = 0; i < n + 1; i++) {
+        int current_byte[8];
+        for (int j = 0; j < 8; j++) {
+            current_byte[j] = checksum[i][j];
+        }
+        binary_addition(validation_result, current_byte, validation_result);
+    }
+
+    for (int j = 0; j < 8; j++) {
+        validation_result[j] = !validation_result[j];
+    }
+
+    printf("Retrieved Data Word: ");
+    for (int j = 0; j < 8; j++) {
+        printf("%d", validation_result[j]);
+    }
+    printf("\n");
+
+    int is_valid = 1;
+    for (int j = 0; j < 8; j++) {
+        if (validation_result[j] != 0) {
+            is_valid = 0;
+            break;
+        }
+    }
+
+    if (is_valid) {
+        printf("No Error.\n");
+    } else {
+        printf("Error.\n");
+    }
+}
+
+int main() {
+    int input[MAX_SIZE][8], checksum[MAX_SIZE + 1][8];
+    int n;
+
+    printf("Enter the number of bytes: ");
+    scanf("%d", &n);
+
+    for (int i = 0; i < n; i++) {
+        printf("Enter byte %d (8 bits as space-separated values): ", i + 1);
+        for (int j = 0; j < 8; j++) {
+            scanf("%d", &input[i][j]);
+        }
+    }
+
+    printf("Given data word: ");
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < 8; j++) {
+            printf("%d", input[i][j]);
+        }
+        printf(" ");
+    }
+    printf("\n");
+
+    calculate_checksum(input, checksum, n);
+
+    printf("Code Word: ");
+    for (int i = 0; i < n + 1; i++) {
+        for (int j = 0; j < 8; j++) {
+            printf("%d", checksum[i][j]);
+        }
+        printf(" ");
+    }
+    printf("\n");
+
+    validate_checksum(checksum, n);
+
+    // Get errored stuffed word as input
+    int erroredChecksum[MAX_SIZE + 1][8];
+    printf("Enter the errored stuffed word (%d bytes, 8 bits each):\n", n + 1);
+    for (int i = 0; i < n + 1; i++) {
+        printf("Enter byte %d: ", i + 1);
+        for (int j = 0; j < 8; j++) {
+            scanf("%d", &erroredChecksum[i][j]);
+        }
+    }
+
+    // Verify and print the errored stuffed word
+    printf("Receiver: After verifying errored stuffed word:\n");
+    validate_checksum(erroredChecksum, n);
+
+    return 0;
+}
